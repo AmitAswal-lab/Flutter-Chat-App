@@ -1,0 +1,12 @@
+*.dart linguist-detectable=true
+*.java linguist-vendored=true
+*.kt linguist-vendored=true
+*.xml linguist-vendored=true
+*.html linguist-vendored=true
+*.css linguist-vendored=true
+*.js linguist-vendored=true
+*.h linguist-vendored=true
+*.m linguist-vendored=true
+*.swift linguist-vendored=true
+*.c linguist-vendored=true
+*.cpp linguist-vendored=true
