@@ -1,7 +1,34 @@
 import 'package:chat_app/screens/auth.dart';
 import 'package:flutter/material.dart';
 
-void main() {
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
+final colorScheme = ColorScheme.fromSeed(
+  seedColor: const Color.fromARGB(255, 0, 0, 0),
+);
+
+final theme = ThemeData.from(useMaterial3: true, colorScheme: colorScheme)
+    .copyWith(
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.all(colorScheme.primary),
+          foregroundColor: WidgetStateProperty.all(colorScheme.onPrimary),
+          padding: WidgetStateProperty.all(
+            const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          ),
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          ),
+        ),
+      ),
+      cardTheme: CardThemeData(color: Colors.black54),
+    );
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   runApp(const App());
 }
 
@@ -10,14 +37,6 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'FlutterChat',
-      theme: ThemeData.from(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color.fromARGB(255, 63, 17, 177),
-        ),
-      ),
-      home: AuthScreen(),
-    );
+    return MaterialApp(title: 'FlutterChat', theme: theme, home: AuthScreen());
   }
 }
