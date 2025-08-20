@@ -1,6 +1,10 @@
 import 'package:chat_app/logic/validator_logic.dart';
 import 'package:flutter/material.dart';
 
+import 'package:firebase_auth/firebase_auth.dart';
+
+final _firebase = FirebaseAuth.instance;
+
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
 
@@ -14,15 +18,36 @@ class _AuthScreenState extends State<AuthScreen> {
   var _enteredpassword = '';
   final _formkey = GlobalKey<FormState>();
 
-  void _sumbit(){
-    final _isvalid = _formkey.currentState!.validate();
+  void _sumbit() async {
+    final isvalid = _formkey.currentState!.validate();
 
-    if(_isvalid){
-      _formkey.currentState!.save();
-      print(_enteredEmail);
-      print(_enteredpassword);
+    if (!isvalid) {
+      return;
     }
-  }
+
+    _formkey.currentState!.save();
+    try {  
+    if (_isLogin) {
+      final userCredentials = await _firebase.signInWithEmailAndPassword(email: _enteredEmail, password: _enteredpassword);
+      print(userCredentials);
+    } else {
+        final userCredentials = await _firebase.createUserWithEmailAndPassword(
+          email: _enteredEmail,
+          password: _enteredpassword,
+        );
+        print(userCredentials);
+      }
+    } on FirebaseAuthException catch (error) {
+        if (error.code == 'email-already-in-use') {}
+        if (!mounted) {
+          return;
+        }
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error.message ?? 'Authentication failed')),
+        );
+      }
+    }
 
   @override
   Widget build(BuildContext context) {
@@ -62,11 +87,11 @@ class _AuthScreenState extends State<AuthScreen> {
                             validator: (value) {
                               return textValidation(value);
                             },
-                            onSaved: (newValue){
-
+                            onSaved: (newValue) {
                               _enteredEmail = newValue!;
                             },
                           ),
+                          SizedBox(height: 32,),
                           TextFormField(
                             decoration: InputDecoration(labelText: 'Password'),
                             obscureText: true,
