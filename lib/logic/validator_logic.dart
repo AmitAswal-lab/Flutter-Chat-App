@@ -38,3 +38,16 @@ String? passwordValidation(value) {
   }
   return null;
 }
+
+String? usernameValidation(value) {
+  if (value == null || value.trim().isEmpty) {
+    return 'Please enter a username.';
+  }
+  if (value.trim().length < 4) {
+    return 'Username must be at least 4 characters long.';
+  }
+  if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value)) {
+    return 'Username can only contain letters, numbers, and underscores.';
+  }
+  return null; // Return null if the input is valid
+}
