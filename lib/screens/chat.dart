@@ -1,31 +1,36 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:chat_app/theme/theme1/app_colors.dart';
+import 'package:chat_app/widgets/new_message.dart';
+import 'package:chat_app/widgets/chat_messages.dart';
 import 'package:flutter/material.dart';
 
 class ChatScreen extends StatelessWidget {
-  const ChatScreen({super.key});
+  const ChatScreen({
+    super.key,
+    required this.chatRoomId,
+    this.showAppBar = true,
+  });
+
+  final String chatRoomId;
+  final bool showAppBar;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.primary,
-      appBar: AppBar(
-        title: Text('Chat'),
-        actions: [
-          IconButton(
-            onPressed: (){
-              FirebaseAuth.instance.signOut();
-            }, 
-            icon: Icon(
-              Icons.exit_to_app,
-              color: Theme.of(context).colorScheme.secondary,
-            ),
-          ),
-        ],
-      ),
-      
-      body: Center(
-         child: Text('Logged in!'),
-      ),
+    final chatContent = Column(
+      children: [
+        Expanded(child: ChatMessages(chatRoomId: chatRoomId)),
+        NewMessage(chatRoomId: chatRoomId),
+      ],
     );
+
+    if (showAppBar) {
+      return Scaffold(
+        backgroundColor: AppColors.surfaceDark,
+        appBar: AppBar(title: Text('Chat')),
+
+        body: chatContent,
+      );
+    } else {
+      return chatContent;
+    }
   }
 }
