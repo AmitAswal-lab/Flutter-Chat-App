@@ -17,7 +17,7 @@ class _UserImagePickerState extends State<UserImagePicker> {
   File? _pickedImageFile;
 
   void _imagePicker()async{
-    final pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 50, maxWidth: 150);
+    final pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 75, maxWidth: 300);
 
     if(pickedImage == null){
       return;
