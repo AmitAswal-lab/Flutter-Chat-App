@@ -28,7 +28,6 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
     });
 
     try {
-      
       final currentUserId = FirebaseAuth.instance.currentUser!.uid;
       final userSnapshot = await FirebaseFirestore.instance
           .collection('users')
@@ -59,7 +58,7 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
   void _startChatWithUser(Map<String, dynamic> userData) async {
     final otherUserId = userData['uid'];
 
-    final otherUsername = userData['username'];
+    userData['username'];
     final currentUser = FirebaseAuth.instance.currentUser!;
 
     List<String> ids = [currentUser.uid, otherUserId];
