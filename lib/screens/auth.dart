@@ -5,7 +5,6 @@ import 'package:chat_app/widgets/user_image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-
 import 'package:firebase_auth/firebase_auth.dart';
 
 final _firebase = FirebaseAuth.instance;
@@ -18,31 +17,32 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  var _isLogin = true;
-  var _enteredEmail = '';
-  var _enteredpassword = '';
-  var _isAuthenticating = false;
-  var _enteredUsername = '';
-
   final _formkey = GlobalKey<FormState>();
 
+  var _isLogin = true;
+  var _enteredEmail = '';
+  var _enteredUsername = '';
+  var _enteredpassword = '';
   File? _selectedImage;
+  var _isAuthenticating = false;
+  bool _isPasswordVisible = false;
 
-  void _sumbit() async {
-    final isvalid = _formkey.currentState!.validate();
+  void _submit() async {
+    final isValid = _formkey.currentState!.validate();
 
-    if (!isvalid || !_isLogin && _selectedImage == null) {
+    if (!isValid) {
       return;
     }
 
     _formkey.currentState!.save();
+
     try {
       setState(() {
         _isAuthenticating = true;
       });
 
       if (_isLogin) {
-        final userCredentials = await _firebase.signInWithEmailAndPassword(
+        await _firebase.signInWithEmailAndPassword(
           email: _enteredEmail,
           password: _enteredpassword,
         );
@@ -51,15 +51,24 @@ class _AuthScreenState extends State<AuthScreen> {
           email: _enteredEmail,
           password: _enteredpassword,
         );
-        final storageRef = FirebaseStorage.instance
-            .ref()
-            .child('user_images')
-            .child('${userCredentials.user!.uid}.jpg');
 
-        await storageRef.putFile(_selectedImage!);
-        final imageURL = await storageRef.getDownloadURL();
+        String imageURL;
 
-        FirebaseFirestore.instance
+        if (_selectedImage != null) {
+          final storageRef = FirebaseStorage.instance
+              .ref()
+              .child('user_images')
+              .child('${userCredentials.user!.uid}.jpg');
+
+          await storageRef.putFile(_selectedImage!);
+          imageURL = await storageRef.getDownloadURL();
+        } else {
+          final encodedUsername = Uri.encodeComponent(_enteredUsername);
+          imageURL =
+              'https://ui-avatars.com/api/?name=$encodedUsername&background=random&color=fff&size=128';
+        }
+
+        await FirebaseFirestore.instance
             .collection('users')
             .doc(userCredentials.user!.uid)
             .set({
@@ -71,13 +80,12 @@ class _AuthScreenState extends State<AuthScreen> {
             });
       }
     } on FirebaseAuthException catch (error) {
-      if (error.code == 'email-already-in-use') {}
       if (!mounted) {
         return;
       }
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message ?? 'Authentication failed')),
+        SnackBar(content: Text(error.message ?? 'Authentication failed.')),
       );
       setState(() {
         _isAuthenticating = false;
@@ -94,7 +102,7 @@ class _AuthScreenState extends State<AuthScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                margin: EdgeInsets.only(
+                margin: const EdgeInsets.only(
                   top: 30,
                   bottom: 20,
                   left: 20,
@@ -103,10 +111,10 @@ class _AuthScreenState extends State<AuthScreen> {
                 child: Image.asset('assets/chat1.png'),
               ),
               Card(
-                margin: EdgeInsets.all(20),
+                margin: const EdgeInsets.all(20),
                 child: SingleChildScrollView(
                   child: Padding(
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
                     child: Form(
                       key: _formkey,
                       child: Column(
@@ -124,49 +132,64 @@ class _AuthScreenState extends State<AuthScreen> {
                                 labelText: 'Username',
                               ),
                               enableSuggestions: false,
-                              validator: (value){
-                                return usernameValidation(value);
-                              }, 
+                              validator: usernameValidation,
                               onSaved: (value) {
                                 _enteredUsername = value!;
                               },
                             ),
-                          SizedBox(height: 16),
+                          const SizedBox(height: 16),
                           if (_isAuthenticating)
                             const CircularProgressIndicator(),
                           if (!_isAuthenticating)
                             TextFormField(
-                              decoration: InputDecoration(
+                              decoration: const InputDecoration(
                                 labelText: 'Email Address',
                               ),
                               keyboardType: TextInputType.emailAddress,
                               autocorrect: false,
                               textCapitalization: TextCapitalization.none,
                               validator: (value) {
-                                return textValidation(value);
+                                // Only validate email format on sign-up.
+                                return _isLogin ? null : textValidation(value);
                               },
                               onSaved: (newValue) {
                                 _enteredEmail = newValue!;
                               },
                             ),
-                          SizedBox(height: 16),
+                          const SizedBox(height: 16),
                           if (!_isAuthenticating)
                             TextFormField(
                               decoration: InputDecoration(
                                 labelText: 'Password',
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _isPasswordVisible
+                                        ? Icons.visibility
+                                        : Icons.visibility_off,
+                                  ),
+                                  onPressed: () {
+                                    // Update the state to toggle password visibility
+                                    setState(() {
+                                      _isPasswordVisible = !_isPasswordVisible;
+                                    });
+                                  },
+                                ),
                               ),
-                              obscureText: true,
-                              textCapitalization: TextCapitalization.none,
+
+                              obscureText: !_isPasswordVisible,
                               validator: (value) {
-                                return passwordValidation(value);
+                                // Only validate password format on sign-up.
+                                return _isLogin
+                                    ? null
+                                    : passwordValidation(value);
                               },
                               onSaved: (newValue) {
                                 _enteredpassword = newValue!;
                               },
                             ),
-                          SizedBox(height: 12),
+                          const SizedBox(height: 12),
                           ElevatedButton(
-                            onPressed: _sumbit,
+                            onPressed: _submit,
                             child: Text(_isLogin ? 'Log in' : 'Sign up'),
                           ),
                           TextButton(
@@ -177,8 +200,8 @@ class _AuthScreenState extends State<AuthScreen> {
                             },
                             child: Text(
                               _isLogin
-                                  ? 'Create a Account'
-                                  : 'I Already have an Account',
+                                  ? 'Create an Account'
+                                  : 'I already have an account',
                             ),
                           ),
                         ],
