@@ -8,10 +8,12 @@ class ChatScreen extends StatelessWidget {
     super.key,
     required this.chatRoomId,
     this.showAppBar = true,
+    this.otherUsername,
   });
 
   final String chatRoomId;
   final bool showAppBar;
+  final String? otherUsername;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +27,7 @@ class ChatScreen extends StatelessWidget {
     if (showAppBar) {
       return Scaffold(
         backgroundColor: AppColors.surfaceDark,
-        appBar: AppBar(title: Text('Chat')),
+        appBar: AppBar(title: Text(otherUsername ?? 'Chat')),
 
         body: chatContent,
       );
