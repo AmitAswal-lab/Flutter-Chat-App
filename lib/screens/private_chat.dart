@@ -1,5 +1,7 @@
-import 'package:chat_app/screens/chat.dart';
 import 'package:flutter/material.dart';
+
+import 'package:chat_app/screens/chat.dart';
+import 'package:chat_app/widgets/online_indicator.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -29,9 +31,8 @@ class PrivateChatScreen extends StatelessWidget {
 
         final loadedChats = chatSnapshots.data!.docs;
 
-        final privateChats = loadedChats
-            .where((doc) => doc.id != 'global_chat')
-            .toList();
+        final privateChats =
+            loadedChats.where((doc) => doc.id != 'global_chat').toList();
 
         if (privateChats.isEmpty) {
           return const Center(
@@ -72,7 +73,12 @@ class PrivateChatScreen extends StatelessWidget {
                   leading: CircleAvatar(
                     backgroundImage: NetworkImage(userData!['imageURL']),
                   ),
-                  title: Text(userData['username']),
+                  title: Row(
+                    children: [
+                      Text(userData['username']),
+                      OnlineIndicator(userId: otherUserId),
+                    ],
+                  ),
                   subtitle: Text(chatData['lastMessage'] ?? ''),
                   onTap: () {
                     Navigator.of(context).push(
@@ -80,6 +86,7 @@ class PrivateChatScreen extends StatelessWidget {
                         builder: (ctx) => ChatScreen(
                           chatRoomId: chatDoc.id,
                           otherUsername: userData['username'],
+                          otherUserId: otherUserId,
                         ),
                       ),
                     );

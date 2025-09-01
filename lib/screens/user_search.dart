@@ -42,9 +42,8 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
           .get();
 
       setState(() {
-        _searchResults = userSnapshot.docs
-            .where((doc) => doc.id != currentUserId)
-            .toList();
+        _searchResults =
+            userSnapshot.docs.where((doc) => doc.id != currentUserId).toList();
       });
     } catch (error) {
       print('Search failed: $error');
@@ -75,6 +74,7 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
         'participants': [currentUser.uid, otherUserId],
         'lastMessage': 'Chat Started!',
         'lastMessageTimestamp': Timestamp.now(),
+        'typing': [],
       });
     }
 

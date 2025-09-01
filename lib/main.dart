@@ -22,15 +22,15 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'FlutterChat',
-       theme: AppTheme.getDarkTheme(), 
-       debugShowCheckedModeBanner: false,
-       home: StreamBuilder(
-        stream: FirebaseAuth.instance.authStateChanges(), 
-        builder: (ctx, snapshot){
-          if(snapshot.connectionState == ConnectionState.waiting){
+      theme: AppTheme.getDarkTheme(),
+      debugShowCheckedModeBanner: false,
+      home: StreamBuilder(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (ctx, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const SplashScreen();
           }
-          if(snapshot.hasData){
+          if (snapshot.hasData) {
             return const ConversationsScreen();
           }
           return const AuthScreen();

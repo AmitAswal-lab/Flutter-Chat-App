@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "432853774570",
+    "firebase_url": "https://chat-app-adc50-default-rtdb.asia-southeast1.firebasedatabase.app",
     "project_id": "chat-app-adc50",
     "storage_bucket": "chat-app-adc50.firebasestorage.app"
   },
