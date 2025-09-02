@@ -7,9 +7,16 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 
 class NewMessage extends StatefulWidget {
-  const NewMessage({super.key, required this.chatRoomId});
+  const NewMessage({
+    super.key,
+    required this.chatRoomId,
+    this.replyingTo,
+    this.onReplySent,
+  });
 
   final String chatRoomId;
+  final ({Map<String, dynamic> messageData, String messageId})? replyingTo;
+  final Function()? onReplySent;
 
   @override
   State<NewMessage> createState() => _NewMessageState();
@@ -35,6 +42,18 @@ class _NewMessageState extends State<NewMessage> {
       return;
     }
 
+    Map<String, dynamic>? replyContext;
+    if (widget.replyingTo != null) {
+      replyContext = {
+        'repliedToMessageId': widget.replyingTo!.messageId,
+        'repliedToMessage': widget.replyingTo!.messageData['type'] == 'image'
+            ? '📷 Photo'
+            : widget.replyingTo!.messageData['text'],
+        'repliedToSender': widget.replyingTo!.messageData['username'],
+        'repliedToSenderId': widget.replyingTo!.messageData['userId'],
+      };
+    }
+
     _typingTimer?.cancel();
     FirebaseFirestore.instance.collection('chats').doc(widget.chatRoomId).set({
       'typing': FieldValue.arrayRemove([_currentUser.uid])
@@ -57,6 +76,7 @@ class _NewMessageState extends State<NewMessage> {
       'username': userData.data()!['username'],
       'userImage': userData.data()!['imageURL'],
       'readBy': [_currentUser.uid],
+      'replyContext': replyContext,
     };
 
     await FirebaseFirestore.instance
@@ -64,6 +84,7 @@ class _NewMessageState extends State<NewMessage> {
         .doc(widget.chatRoomId)
         .collection('messages')
         .add(messageData);
+    widget.onReplySent?.call();
 
     await FirebaseFirestore.instance
         .collection('chats')
@@ -72,6 +93,9 @@ class _NewMessageState extends State<NewMessage> {
       'lastMessage': imageUrl != null ? '📷 Photo' : enteredMessage,
       'lastMessageTimestamp': Timestamp.now(),
     });
+    if (widget.onReplySent != null) {
+      widget.onReplySent!();
+    }
   }
 
   void _sendImage() async {
@@ -102,7 +126,6 @@ class _NewMessageState extends State<NewMessage> {
       await storageRef.putFile(imageFile);
       final imageUrl = await storageRef.getDownloadURL();
 
-      // Now, call the unified submit function with the URL
       _submitMessage(imageUrl: imageUrl);
     } catch (error) {
       print("----------- IMAGE UPLOAD FAILED -----------");
@@ -120,7 +143,6 @@ class _NewMessageState extends State<NewMessage> {
     }
   }
 
-  // --- TYPING HANDLER (No changes needed here) ---
   void _handleTyping(String value) {
     final chatDocRef =
         FirebaseFirestore.instance.collection('chats').doc(widget.chatRoomId);
@@ -140,7 +162,6 @@ class _NewMessageState extends State<NewMessage> {
     });
   }
 
-  // --- UPDATED BUILD METHOD ---
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -176,7 +197,6 @@ class _NewMessageState extends State<NewMessage> {
             IconButton(
               iconSize: 35,
               color: Theme.of(context).colorScheme.primary,
-              // Call the unified submit function with no params for a text message
               onPressed: () => _submitMessage(),
               icon: const Icon(Icons.send),
             ),

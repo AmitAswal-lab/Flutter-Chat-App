@@ -24,35 +24,132 @@ class MessageBubble extends StatelessWidget {
   final Map<String, dynamic> messageData;
   final bool isMe;
 
+  Widget _buildReplyContent(BuildContext context) {
+    if (messageData['replyContext'] == null) {
+      return const SizedBox.shrink();
+    }
+
+    final replyData = messageData['replyContext'] as Map<String, dynamic>;
+    final repliedToSender = replyData['repliedToSender'];
+    final repliedToMessage = replyData['repliedToMessage'];
+    final repliedToSenderId = replyData['repliedToSenderId'];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+      margin: const EdgeInsets.only(left: 4, right: 4, top: 4, bottom: 4),
+      decoration: BoxDecoration(
+        color: Colors.black.withAlpha(51),
+        borderRadius: const BorderRadius.all(Radius.circular(8)),
+        border: Border(
+          left: BorderSide(
+            color: _getUserColor(repliedToSenderId),
+            width: 4,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            repliedToSender,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: _getUserColor(repliedToSenderId),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            repliedToMessage,
+            style: TextStyle(color: Colors.white.withAlpha(299)),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessageContent(BuildContext context) {
+    final messageType = messageData['type'] as String? ?? 'text';
+
+    if (messageType == 'image') {
+      return Image.network(
+        messageData['imageUrl'],
+        fit: BoxFit.cover,
+        height: 250,
+        width: 250,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            width: 250,
+            height: 250,
+            color: Colors.grey[800],
+            child: const Center(child: CircularProgressIndicator()),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: 250,
+            height: 250,
+            color: Colors.grey[800],
+            child: const Center(child: Icon(Icons.error, color: Colors.white)),
+          );
+        },
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Flexible(
+            child: Text(
+              messageData['text'],
+              style: TextStyle(
+                height: 1.3,
+                color: isMe
+                    ? AppColors.chatBubbleTextLight
+                    : AppColors.chatBubbleTextDark,
+                fontSize: 15,
+              ),
+              softWrap: true,
+            ),
+          ),
+          _buildReadReceipt(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReadReceipt() {
+    if (!isMe) {
+      return const SizedBox.shrink();
+    }
+    final readBy = messageData['readBy'] as List<dynamic>? ?? [];
+    final bool isRead = readBy.length > 1;
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 5, top: 4),
+      child: Icon(
+        isRead ? Icons.done_all : Icons.done,
+        size: 18,
+        color: isRead
+            ? const Color.fromARGB(255, 82, 112, 13)
+            : Colors.white.withAlpha(189),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
-    final messageType = messageData['type'] as String? ?? 'text';
     final userImage =
         isFirstInSequence ? messageData['userImage'] as String? : null;
     final username =
         isFirstInSequence ? messageData['username'] as String? : null;
     final userId = messageData['userId'] as String;
-
-    Widget buildReadReceipt() {
-      if (!isMe) {
-        return const SizedBox.shrink();
-      }
-      final readBy = messageData['readBy'] as List<dynamic>? ?? [];
-      final bool isRead = readBy.length > 1;
-
-      return Padding(
-        padding: const EdgeInsets.only(left: 5, top: 4),
-        child: Icon(
-          isRead ? Icons.done_all : Icons.done,
-          size: 18,
-          color: isRead
-              ? const Color.fromARGB(255, 84, 104, 12)
-              : Colors.white.withAlpha(189),
-        ),
-      );
-    }
 
     final borderRadius = BorderRadius.only(
       topLeft:
@@ -95,10 +192,9 @@ class MessageBubble extends StatelessWidget {
                     child: Text(
                       username,
                       style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: _getUserColor(userId),
-                      ),
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: _getUserColor(userId)),
                     ),
                   ),
                 Container(
@@ -112,59 +208,14 @@ class MessageBubble extends StatelessWidget {
                   constraints: const BoxConstraints(maxWidth: 250),
                   margin:
                       const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
-                  child: messageType == 'image'
-                      ? Image.network(
-                          messageData['imageUrl'],
-                          fit: BoxFit.cover,
-                          height: 250,
-                          width: 250,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Container(
-                              width: 250,
-                              height: 250,
-                              color: Colors.grey[800],
-                              child: const Center(
-                                  child: CircularProgressIndicator()),
-                            );
-                          },
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: 250,
-                              height: 250,
-                              color: Colors.grey[800],
-                              child: const Center(
-                                  child:
-                                      Icon(Icons.error, color: Colors.white)),
-                            );
-                          },
-                        )
-                      : Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 10,
-                            horizontal: 14,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  messageData['text'],
-                                  style: TextStyle(
-                                    height: 1.3,
-                                    color: isMe
-                                        ? AppColors.chatBubbleTextLight
-                                        : AppColors.chatBubbleTextDark,
-                                    fontSize: 15,
-                                  ),
-                                  softWrap: true,
-                                ),
-                              ),
-                              buildReadReceipt(),
-                            ],
-                          ),
-                        ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildReplyContent(context),
+                      _buildMessageContent(context),
+                    ],
+                  ),
                 ),
               ],
             ),
