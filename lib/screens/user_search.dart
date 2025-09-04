@@ -42,9 +42,8 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
           .get();
 
       setState(() {
-        _searchResults = userSnapshot.docs
-            .where((doc) => doc.id != currentUserId)
-            .toList();
+        _searchResults =
+            userSnapshot.docs.where((doc) => doc.id != currentUserId).toList();
       });
     } catch (error) {
       print('Search failed: $error');
@@ -55,34 +54,65 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
     }
   }
 
-  void _startChatWithUser(Map<String, dynamic> userData) async {
-    final otherUserId = userData['uid'];
+  void _startChatWithUser(Map<String, dynamic> otherUserData) async {
+    setState(() {
+      _isLoading = true;
+    });
 
-    userData['username'];
-    final currentUser = FirebaseAuth.instance.currentUser!;
+    try {
+      final otherUserId = otherUserData['uid'];
+      final currentUser = FirebaseAuth.instance.currentUser!;
 
-    List<String> ids = [currentUser.uid, otherUserId];
-    ids.sort();
-    String chatRoomId = ids.join('_');
+      final participants = [currentUser.uid, otherUserId];
+      participants.sort();
+      final chatId = participants.join('_');
 
-    final chatDoc = await FirebaseFirestore.instance
-        .collection('chats')
-        .doc(chatRoomId)
-        .get();
+      final currentUserDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .get();
+      final currentUserData = currentUserDoc.data()!;
 
-    if (!chatDoc.exists) {
-      await FirebaseFirestore.instance.collection('chats').doc(chatRoomId).set({
-        'participants': [currentUser.uid, otherUserId],
-        'lastMessage': 'Chat Started!',
-        'lastMessageTimestamp': Timestamp.now(),
+      final participantsInfo = {
+        currentUser.uid: {
+          'username': currentUserData['username'],
+          'imageURL': currentUserData['imageURL'],
+        },
+        otherUserId: {
+          'username': otherUserData['username'],
+          'imageURL': otherUserData['imageURL'],
+        }
+      };
+
+      await FirebaseFirestore.instance.collection('chats').doc(chatId).set({
+        'participants': participants,
+        'participantsInfo': participantsInfo,
+        'lastMessageTimestamp': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (ctx) => ChatScreen(
+              chatRoomId: chatId,
+              otherUsername: otherUserData['username'],
+              otherUserId: otherUserId,
+            ),
+          ),
+        );
+      }
+    } catch (error) {
+      print("Error starting chat: $error");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Could not start chat. Please try again.')),
+        );
+      }
+    } finally {
+      setState(() {
+        _isLoading = false;
       });
-    }
-
-    // Navigate to the ChatScreen
-    if (mounted) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (ctx) => ChatScreen(chatRoomId: chatRoomId)),
-      );
     }
   }
 

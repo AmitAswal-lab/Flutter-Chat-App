@@ -1,7 +1,7 @@
 import 'package:chat_app/theme/theme1/app_colors.dart';
+import 'package:chat_app/screens/full_screen_image_viewer.dart';
 import 'package:flutter/material.dart';
 
-// Helper function to get a consistent color for a user ID
 Color _getUserColor(String userId) {
   final int hash = userId.hashCode;
   final int index = hash % AppColors.chatUsernameColors.length;
@@ -11,32 +11,173 @@ Color _getUserColor(String userId) {
 class MessageBubble extends StatelessWidget {
   const MessageBubble.first({
     super.key,
-    required this.userImage,
-    required this.username,
-    required this.message,
+    required this.messageData,
     required this.isMe,
-    required this.userId,
   }) : isFirstInSequence = true;
 
   const MessageBubble.next({
     super.key,
-    required this.message,
+    required this.messageData,
     required this.isMe,
-    required this.userId,
-  }) : isFirstInSequence = false,
-       userImage = null,
-       username = null;
+  }) : isFirstInSequence = false;
 
   final bool isFirstInSequence;
-  final String? userImage;
-  final String? username;
-  final String message;
+  final Map<String, dynamic> messageData;
   final bool isMe;
-  final String? userId;
+
+  // Reply Preview -
+  Widget _buildReplyContent(BuildContext context) {
+    if (messageData['replyContext'] == null) {
+      return const SizedBox.shrink();
+    }
+    final replyData = messageData['replyContext'] as Map<String, dynamic>;
+    final repliedToSender = replyData['repliedToSender'];
+    final repliedToMessage = replyData['repliedToMessage'];
+    final repliedToSenderId = replyData['repliedToSenderId'];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+      margin: const EdgeInsets.only(left: 4, right: 4, top: 4, bottom: 4),
+      decoration: BoxDecoration(
+        color: Colors.black.withAlpha((0.2 * 255).round()),
+        borderRadius: const BorderRadius.all(Radius.circular(8)),
+        border: Border(
+            left:
+                BorderSide(color: _getUserColor(repliedToSenderId), width: 4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            repliedToSender,
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: _getUserColor(repliedToSenderId)),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            repliedToMessage,
+            style:
+                TextStyle(color: Colors.white.withAlpha((0.9 * 255).round())),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // The Main Message Content (Text or Image) -
+  Widget _buildMessageContent(BuildContext context) {
+    final messageType = messageData['type'] as String? ?? 'text';
+
+    if (messageType == 'image') {
+      return GestureDetector(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) =>
+                  FullScreenImageViewer(imageUrl: messageData['imageUrl']),
+            ),
+          );
+        },
+        child: Hero(
+          tag: messageData['imageUrl'],
+          child: Container(
+            constraints: const BoxConstraints(maxHeight: 250, maxWidth: 250),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                messageData['imageUrl'],
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Container(
+                    width: 250,
+                    height: 250,
+                    color: Colors.grey[800],
+                    child: const Center(child: CircularProgressIndicator()),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 250,
+                    height: 250,
+                    color: Colors.grey[800],
+                    child: const Center(
+                        child: Icon(Icons.error, color: Colors.white)),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Flexible(
+            child: Text(
+              messageData['text'],
+              style: TextStyle(
+                height: 1.3,
+                color: isMe
+                    ? AppColors.chatBubbleTextLight
+                    : AppColors.chatBubbleTextDark,
+                fontSize: 15,
+              ),
+              softWrap: true,
+            ),
+          ),
+          _buildReadReceipt(),
+        ],
+      ),
+    );
+  }
+
+  // Read Receipt Icon -
+  Widget _buildReadReceipt() {
+    if (!isMe) {
+      return const SizedBox.shrink();
+    }
+    final readBy = messageData['readBy'] as List<dynamic>? ?? [];
+    final bool isRead = readBy.length > 1;
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 5, top: 4),
+      child: Icon(
+        isRead ? Icons.done_all : Icons.done,
+        size: 18,
+        color: isRead
+            ? const Color.fromARGB(255, 101, 131, 19)
+            : Colors.white.withAlpha((0.7 * 255).round()),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final userImage =
+        isFirstInSequence ? messageData['userImage'] as String? : null;
+    final username =
+        isFirstInSequence ? messageData['username'] as String? : null;
+    final userId = messageData['userId'] as String;
+
+    final borderRadius = BorderRadius.only(
+      topLeft:
+          !isMe && isFirstInSequence ? Radius.zero : const Radius.circular(12),
+      topRight:
+          isMe && isFirstInSequence ? Radius.zero : const Radius.circular(12),
+      bottomLeft: const Radius.circular(12),
+      bottomRight: const Radius.circular(12),
+    );
+
     final avatarRadius = 15;
     final avatarSpace = (avatarRadius * 2) + 4.0;
 
@@ -45,78 +186,53 @@ class MessageBubble extends StatelessWidget {
         if (userImage != null && !isMe)
           Positioned(
             top: 10,
-
             left: 0,
             child: CircleAvatar(
-              backgroundImage: NetworkImage(userImage!),
+              backgroundImage: NetworkImage(userImage),
               backgroundColor: theme.colorScheme.primary.withAlpha(180),
               radius: 15,
             ),
           ),
         Row(
-          mainAxisAlignment: isMe
-              ? MainAxisAlignment.end
-              : MainAxisAlignment.start,
+          mainAxisAlignment:
+              isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
           children: [
             if (!isMe) SizedBox(width: avatarSpace),
-
             Column(
-              crossAxisAlignment: isMe
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
                 if (isFirstInSequence) const SizedBox(height: 8),
                 if (username != null && !isMe)
                   Padding(
-                    padding: const EdgeInsets.only(
-                      left: 8,
-                      right: 13,
-                      bottom: 4,
-                    ),
+                    padding:
+                        const EdgeInsets.only(left: 8, right: 13, bottom: 4),
                     child: Text(
-                      username!,
+                      username,
                       style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: _getUserColor(userId!),
-                      ),
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: _getUserColor(userId)),
                     ),
                   ),
                 Container(
+                  clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(
                     color: isMe
                         ? AppColors.chatMeBubbleLightBlue
                         : AppColors.chatOtherBubbleDark,
-                    borderRadius: BorderRadius.only(
-                      topLeft: !isMe && isFirstInSequence
-                          ? Radius.zero
-                          : const Radius.circular(12),
-                      topRight: isMe && isFirstInSequence
-                          ? Radius.zero
-                          : const Radius.circular(12),
-                      bottomLeft: const Radius.circular(12),
-                      bottomRight: const Radius.circular(12),
-                    ),
+                    borderRadius: borderRadius,
                   ),
-                  constraints: const BoxConstraints(maxWidth: 200),
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 10,
-                    horizontal: 14,
-                  ),
-                  margin: const EdgeInsets.symmetric(
-                    vertical: 2,
-                    horizontal: 4,
-                  ),
-                  child: Text(
-                    message,
-                    style: TextStyle(
-                      height: 1.3,
-                      color: isMe
-                          ? AppColors.chatBubbleTextLight
-                          : AppColors.chatBubbleTextDark,
-                      fontSize: 15,
-                    ),
-                    softWrap: true,
+                  constraints: const BoxConstraints(maxWidth: 250),
+                  margin:
+                      const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildReplyContent(context),
+                      _buildMessageContent(context),
+                    ],
                   ),
                 ),
               ],
