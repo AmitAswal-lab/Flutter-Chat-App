@@ -160,6 +160,16 @@ class _ChatScreenState extends State<ChatScreen> {
             child: StreamBuilder(
               stream: _messagesStream,
               builder: (ctx, chatSnapshots) {
+                if (chatSnapshots.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (!chatSnapshots.hasData ||
+                    chatSnapshots.data!.docs.isEmpty) {
+                  return const Center(child: Text('No messages found!'));
+                }
+                if (chatSnapshots.hasError) {
+                  return const Center(child: Text('Something went wrong...'));
+                }
                 final loadedMessages = chatSnapshots.data!.docs;
                 _markMessagesAsRead(loadedMessages);
 
@@ -175,10 +185,18 @@ class _ChatScreenState extends State<ChatScreen> {
                     final nextMessage = index + 1 < loadedMessages.length
                         ? loadedMessages[index + 1].data()
                         : null;
-                    final currentMessageUserId = chatMessage['userId'];
+                    final currentMessageUserId =
+                        chatMessage['userId'] as String? ?? '';
+                    final nextMessageUserId =
+                        nextMessage?['userId'] as String? ?? '';
+
+                    // If a message has no user ID, it's corrupted, so we skip it.
+                    if (currentMessageUserId.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
                     final isMe = _currentUser.uid == currentMessageUserId;
-                    final bool isFirstInSequence = nextMessage == null ||
-                        nextMessage['userId'] != currentMessageUserId;
+                    final isFirstInSequence = nextMessage == null ||
+                        nextMessageUserId != currentMessageUserId;
 
                     return SwipeableMessageBubble(
                       key: ValueKey(messageDoc.id),
@@ -191,7 +209,6 @@ class _ChatScreenState extends State<ChatScreen> {
                           messageId: messageDoc.id,
                         );
                       },
-                      // Pass the function to the new onLongPress parameter
                       onLongPress: () {
                         _showMessageOptions(
                             context, chatMessage, messageDoc.id);

@@ -1,4 +1,5 @@
 import 'package:chat_app/theme/theme1/app_colors.dart';
+import 'package:chat_app/screens/full_screen_image_viewer.dart';
 import 'package:flutter/material.dart';
 
 Color _getUserColor(String userId) {
@@ -24,11 +25,11 @@ class MessageBubble extends StatelessWidget {
   final Map<String, dynamic> messageData;
   final bool isMe;
 
+  // Reply Preview -
   Widget _buildReplyContent(BuildContext context) {
     if (messageData['replyContext'] == null) {
       return const SizedBox.shrink();
     }
-
     final replyData = messageData['replyContext'] as Map<String, dynamic>;
     final repliedToSender = replyData['repliedToSender'];
     final repliedToMessage = replyData['repliedToMessage'];
@@ -38,14 +39,11 @@ class MessageBubble extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
       margin: const EdgeInsets.only(left: 4, right: 4, top: 4, bottom: 4),
       decoration: BoxDecoration(
-        color: Colors.black.withAlpha(51),
+        color: Colors.black.withAlpha((0.2 * 255).round()),
         borderRadius: const BorderRadius.all(Radius.circular(8)),
         border: Border(
-          left: BorderSide(
-            color: _getUserColor(repliedToSenderId),
-            width: 4,
-          ),
-        ),
+            left:
+                BorderSide(color: _getUserColor(repliedToSenderId), width: 4)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,14 +51,14 @@ class MessageBubble extends StatelessWidget {
           Text(
             repliedToSender,
             style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: _getUserColor(repliedToSenderId),
-            ),
+                fontWeight: FontWeight.bold,
+                color: _getUserColor(repliedToSenderId)),
           ),
           const SizedBox(height: 2),
           Text(
             repliedToMessage,
-            style: TextStyle(color: Colors.white.withAlpha(299)),
+            style:
+                TextStyle(color: Colors.white.withAlpha((0.9 * 255).round())),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -69,32 +67,51 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
+  // The Main Message Content (Text or Image) -
   Widget _buildMessageContent(BuildContext context) {
     final messageType = messageData['type'] as String? ?? 'text';
 
     if (messageType == 'image') {
-      return Image.network(
-        messageData['imageUrl'],
-        fit: BoxFit.cover,
-        height: 250,
-        width: 250,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Container(
-            width: 250,
-            height: 250,
-            color: Colors.grey[800],
-            child: const Center(child: CircularProgressIndicator()),
+      return GestureDetector(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) =>
+                  FullScreenImageViewer(imageUrl: messageData['imageUrl']),
+            ),
           );
         },
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            width: 250,
-            height: 250,
-            color: Colors.grey[800],
-            child: const Center(child: Icon(Icons.error, color: Colors.white)),
-          );
-        },
+        child: Hero(
+          tag: messageData['imageUrl'],
+          child: Container(
+            constraints: const BoxConstraints(maxHeight: 250, maxWidth: 250),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                messageData['imageUrl'],
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Container(
+                    width: 250,
+                    height: 250,
+                    color: Colors.grey[800],
+                    child: const Center(child: CircularProgressIndicator()),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 250,
+                    height: 250,
+                    color: Colors.grey[800],
+                    child: const Center(
+                        child: Icon(Icons.error, color: Colors.white)),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
       );
     }
 
@@ -123,6 +140,7 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
+  // Read Receipt Icon -
   Widget _buildReadReceipt() {
     if (!isMe) {
       return const SizedBox.shrink();
@@ -136,8 +154,8 @@ class MessageBubble extends StatelessWidget {
         isRead ? Icons.done_all : Icons.done,
         size: 18,
         color: isRead
-            ? const Color.fromARGB(255, 82, 112, 13)
-            : Colors.white.withAlpha(189),
+            ? const Color.fromARGB(255, 101, 131, 19)
+            : Colors.white.withAlpha((0.7 * 255).round()),
       ),
     );
   }
