@@ -17,7 +17,6 @@ class PresenceService {
       'last_seen': ServerValue.timestamp,
     };
 
-    // The magic: onDisconnect is a server-side instruction
     // It will execute even if the app crashes or loses connection
     _userStatusRef.onDisconnect().set({
       'isOnline': false,
@@ -28,7 +27,7 @@ class PresenceService {
     _userStatusRef.set(status);
   }
 
-  // Sets the user's status to offline (for graceful disconnects, e.g. backgrounding)
+  // Sets the user's status to offline
   void setOffline() {
     final status = {
       'isOnline': false,

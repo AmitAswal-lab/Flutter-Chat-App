@@ -1,7 +1,7 @@
-import 'package:chat_app/screens/auth.dart';
-import 'package:chat_app/screens/conversations.dart';
-import 'package:chat_app/screens/splash.dart';
-import 'package:chat_app/theme/theme1/app_theme.dart';
+import 'package:chat_app/presentation/screens/auth.dart';
+import 'package:chat_app/presentation/screens/conversations.dart';
+import 'package:chat_app/presentation/screens/splash.dart';
+import 'package:chat_app/core/theme/theme1/app_theme.dart';
 import 'package:flutter/material.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
