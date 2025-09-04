@@ -102,6 +102,8 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
         );
       }
     } catch (error) {
+      print("----------- ERROR STARTING CHAT -----------");
+      print(error);
       print("Error starting chat: $error");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

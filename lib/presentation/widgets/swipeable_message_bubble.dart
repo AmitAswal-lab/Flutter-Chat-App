@@ -1,4 +1,4 @@
-import 'package:chat_app/widgets/chat_bubble.dart';
+import 'package:chat_app/presentation/widgets/chat_bubble.dart';
 import 'package:flutter/material.dart';
 
 class SwipeableMessageBubble extends StatefulWidget {

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'package:chat_app/screens/chat.dart';
-import 'package:chat_app/screens/private_chat.dart';
-import 'package:chat_app/screens/user_search.dart';
-import 'package:chat_app/screens/profile_screen.dart';
-import 'package:chat_app/logic/presence_service.dart';
+import 'package:chat_app/presentation/screens/chat.dart';
+import 'package:chat_app/presentation/screens/private_chat.dart';
+import 'package:chat_app/presentation/screens/user_search.dart';
+import 'package:chat_app/presentation/screens/profile_screen.dart';
+import 'package:chat_app/data/datasources/presence_service.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
