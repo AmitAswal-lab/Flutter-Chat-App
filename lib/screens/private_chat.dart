@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-
 import 'package:chat_app/screens/chat.dart';
 import 'package:chat_app/widgets/online_indicator.dart';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -30,7 +28,6 @@ class PrivateChatScreen extends StatelessWidget {
         }
 
         final loadedChats = chatSnapshots.data!.docs;
-
         final privateChats =
             loadedChats.where((doc) => doc.id != 'global_chat').toList();
 
@@ -45,11 +42,26 @@ class PrivateChatScreen extends StatelessWidget {
           itemBuilder: (ctx, index) {
             final chatDoc = privateChats[index];
             final chatData = chatDoc.data();
+
+            if (!chatData.containsKey('participants') ||
+                chatData['participants'] is! List) {
+              return const SizedBox.shrink();
+            }
+
             final participants = chatData['participants'] as List<dynamic>;
+
+            if (participants.length < 2) {
+              return const SizedBox.shrink();
+            }
 
             final otherUserId = participants.firstWhere(
               (id) => id != currentUser.uid,
+              orElse: () => '',
             );
+
+            if (otherUserId.isEmpty) {
+              return const SizedBox.shrink();
+            }
 
             return FutureBuilder(
               future: FirebaseFirestore.instance
@@ -63,19 +75,24 @@ class PrivateChatScreen extends StatelessWidget {
                     title: Text('Loading...'),
                   );
                 }
-
-                if (!userSnapshot.hasData) {
+                if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
                   return const ListTile(title: Text('User not found'));
                 }
-                final userData = userSnapshot.data!.data();
+
+                final userData = userSnapshot.data!.data()!;
+                final username =
+                    userData['username'] as String? ?? 'Deleted User';
+                final imageUrl = userData['imageURL'] as String? ?? '';
 
                 return ListTile(
                   leading: CircleAvatar(
-                    backgroundImage: NetworkImage(userData!['imageURL']),
+                    backgroundImage:
+                        imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
+                    child: imageUrl.isEmpty ? const Icon(Icons.person) : null,
                   ),
                   title: Row(
                     children: [
-                      Text(userData['username']),
+                      Text(username),
                       OnlineIndicator(userId: otherUserId),
                     ],
                   ),
@@ -85,7 +102,7 @@ class PrivateChatScreen extends StatelessWidget {
                       MaterialPageRoute(
                         builder: (ctx) => ChatScreen(
                           chatRoomId: chatDoc.id,
-                          otherUsername: userData['username'],
+                          otherUsername: username,
                           otherUserId: otherUserId,
                         ),
                       ),

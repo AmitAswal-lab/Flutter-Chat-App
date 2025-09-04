@@ -93,9 +93,6 @@ class _NewMessageState extends State<NewMessage> {
       'lastMessage': imageUrl != null ? '📷 Photo' : enteredMessage,
       'lastMessageTimestamp': Timestamp.now(),
     });
-    if (widget.onReplySent != null) {
-      widget.onReplySent!();
-    }
   }
 
   void _sendImage() async {

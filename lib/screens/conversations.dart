@@ -37,6 +37,12 @@ class _ConversationsScreenState extends State<ConversationsScreen>
   }
 
   @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     switch (state) {
@@ -99,6 +105,10 @@ class _ConversationsScreenState extends State<ConversationsScreen>
     } else {
       // If it's a private chat, navigate to the ChatScreen
       final otherUsername = data['otherUsername'];
+      if (otherUsername == null) {
+        print('Error: Notification is missing otherUsername');
+        return;
+      }
       if (mounted) {
         Navigator.of(context).push(
           MaterialPageRoute(
